@@ -32,7 +32,7 @@ $recentOrders = $pdo->query("SELECT * FROM orders ORDER BY created_at DESC LIMIT
 <table>
     <thead>
         <tr>
-            <th>Order ID</th>
+            <th>Order Id</th>
             <th>Total</th>
             <th>Status</th>
             <th>Date</th>
