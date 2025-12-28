@@ -45,7 +45,7 @@ $isLoggedIn = isset($_SESSION['user_id']);
             <p>You need to be logged in to complete the purchase.</p>
             <a href="login.php" class="btn" style="display:block; text-align:center; margin-top:10px;">Login</a>
             <p style="text-align:center; margin-top:10px;">OR</p>
-            <a href="register.php" class="btn btn-primary" style="display:block; text-align:center; background:#6c757d;">Register</a>
+            <a href="register.php" class="btn btn-primary" style="display:block; text-align:center;">Register</a>
         <?php endif; ?>
     </div>
 </div>

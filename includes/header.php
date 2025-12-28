@@ -11,32 +11,35 @@ $cats = $pdo->query("SELECT * FROM categories")->fetchAll();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JJ.MOBISHOP</title>
+    <title>JJ.MOBISHOP | Premium Mobile Store</title>
     <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <header>
         <div class="container">
-            <h1><a href="index.php" style="color:#fff;">JJ.MOBISHOP</a></h1>
+            <a href="index.php" class="brand">JJ.<span>MOBISHOP</span></a>
+            
             <nav>
                 <ul>
-                    <li><a href="index.php">Home</a></li>
-                    <?php foreach($cats as $c): ?>
-                        <li><a href="index.php?category=<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['name']); ?></a></li>
-                    <?php endforeach; ?>
-                    
-                    <li><a href="checkout.php">Cart (<span id="cart-count">0</span>)</a></li>
-                    
-                    <?php if(isset($_SESSION['user_id'])): ?>
-                        <?php if($_SESSION['user_role'] === 'admin'): ?>
-                            <li><a href="admin/dashboard.php">Admin</a></li>
-                        <?php endif; ?>
-                        <li><a href="logout.php">Logout (<?php echo htmlspecialchars($_SESSION['user_name']); ?>)</a></li>
-                    <?php else: ?>
-                        <li><a href="login.php">Login</a></li>
-                    <?php endif; ?>
+                    <li><a href="index.php"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="#shop"><i class="fas fa-store"></i> Shop</a></li>
+                    <li><a href="checkout.php"><i class="fas fa-shopping-bag"></i> Cart <span class="badge" id="cart-count">0</span></a></li>
+                    <li><a href="#footer"><i class="fas fa-envelope"></i> Contact</a></li>
                 </ul>
             </nav>
+
+            <div class="header-actions">
+                <div style="position:relative;">
+                    <i class="fas fa-search" style="position:absolute; left:10px; top:10px; font-size:12px; color:rgba(255,255,255,0.5);"></i>
+                    <input type="text" placeholder="Search" class="search-bar" style="padding-left:30px;">
+                </div>
+                
+                <?php if(isset($_SESSION['user_id'])): ?>
+                    <a href="logout.php"><i class="fas fa-user-circle"></i></a>
+                <?php else: ?>
+                    <a href="login.php"><i class="far fa-user"></i></a>
+                <?php endif; ?>
+            </div>
         </div>
     </header>
-    <div class="container main-content">

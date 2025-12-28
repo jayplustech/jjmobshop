@@ -30,34 +30,42 @@ if (isset($_POST['login'])) {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Login - JJ.MOBISHOP</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
+<?php include('includes/header.php'); ?>
+
+<div class="auth-wrapper">
     <div class="auth-container">
-        <h2>Login</h2>
+        <div class="auth-tabs">
+            <a href="login.php" class="auth-tab active">Login</a>
+            <a href="register.php" class="auth-tab">Register</a>
+        </div>
+        
         <?php if(isset($_SESSION['success'])): ?>
-            <p class="success"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></p>
+            <p class="success" style="font-size:14px; text-align:center; padding:10px; background:#d4edda; color:#155724; border-radius:6px; margin-bottom:20px;"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></p>
         <?php endif; ?>
-        <?php if(isset($error)): ?>
-            <p class="error"><?php echo $error; ?></p>
-        <?php endif; ?>
+        
         <form method="POST" action="">
+            <?php if(isset($error)): ?>
+                <div style="background:#f8d7da; color:#721c24; padding:10px; margin-bottom:15px; border-radius:6px; font-size:14px; text-align:center;">
+                    <?php echo $error; ?>
+                </div>
+            <?php endif; ?>
+
             <div class="form-group">
-                <label>Email</label>
-                <input type="email" name="email" required>
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="example@gmail.com" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" name="password" required>
+                <input type="password" name="password" placeholder="••••••••" required>
             </div>
-            <button type="submit" name="login" class="btn">Login</button>
+            
+            <button type="submit" name="login" class="btn btn-auth">Login to Account</button>
         </form>
-        <p>Don't have an account? <a href="register.php">Register here</a></p>
+        
+        <div class="auth-footer">
+            <p>Forgot password? <a href="#">Reset here</a></p>
+        </div>
     </div>
-</body>
-</html>
+</div>
+
+<?php include('includes/footer.php'); ?>

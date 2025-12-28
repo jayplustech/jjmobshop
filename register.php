@@ -31,35 +31,43 @@ if (isset($_POST['register'])) {
     }
 }
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Register - JJ.MOBISHOP</title>
-    <link rel="stylesheet" href="assets/style.css">
-</head>
-<body>
+<?php include('includes/header.php'); ?>
+
+<div class="auth-wrapper">
     <div class="auth-container">
-        <h2>Register</h2>
-        <?php if(isset($error)): ?>
-            <p class="error"><?php echo $error; ?></p>
-        <?php endif; ?>
+        <div class="auth-tabs">
+            <a href="login.php" class="auth-tab">Login</a>
+            <a href="register.php" class="auth-tab active">Register</a>
+        </div>
+
         <form method="POST" action="">
+            <?php if(isset($error)): ?>
+                <div style="background:#f8d7da; color:#721c24; padding:10px; margin-bottom:15px; border-radius:6px; font-size:14px; text-align:center;">
+                    <?php echo $error; ?>
+                </div>
+            <?php endif; ?>
+
             <div class="form-group">
-                <label>Name</label>
-                <input type="text" name="name" required>
+                <label>Full Name</label>
+                <input type="text" name="name" placeholder="John Doe" required>
             </div>
             <div class="form-group">
-                <label>Email</label>
-                <input type="email" name="email" required>
+                <label>Email Address</label>
+                <input type="email" name="email" placeholder="example@gmail.com" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
-                <input type="password" name="password" required>
+                <input type="password" name="password" placeholder="Create a password" required>
+                <span class="form-error-text">Must be at least 6 characters</span>
             </div>
-            <button type="submit" name="register" class="btn">Register</button>
+            
+            <button type="submit" name="register" class="btn btn-auth">Create Account</button>
         </form>
-        <p>Already have an account? <a href="login.php">Login here</a></p>
+
+        <div class="auth-footer">
+            <p>By registering, you agree to our <a href="#">Terms & Conditions</a></p>
+        </div>
     </div>
-</body>
-</html>
+</div>
+
+<?php include('includes/footer.php'); ?>

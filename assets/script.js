@@ -3,7 +3,7 @@ let cart = JSON.parse(localStorage.getItem('jj_cart')) || [];
 
 document.addEventListener('DOMContentLoaded', () => {
     updateCartCount();
-    
+
     // If on checkout page, render cart
     if (window.location.pathname.includes('checkout.php')) {
         renderCheckout();
@@ -29,7 +29,22 @@ function saveCart() {
 function updateCartCount() {
     const count = cart.reduce((sum, item) => sum + item.quantity, 0);
     const countEl = document.getElementById('cart-count');
-    if (countEl) countEl.innerText = count;
+
+    if (countEl) {
+        countEl.innerText = count;
+
+        // Trigger Animation
+        countEl.classList.remove('bump');
+        void countEl.offsetWidth; // Trigger reflow
+        countEl.classList.add('bump');
+
+        // Optional: Hide if 0
+        if (count === 0) {
+            countEl.style.display = 'none';
+        } else {
+            countEl.style.display = 'inline-block';
+        }
+    }
 }
 
 function removeFromCart(id) {
@@ -55,12 +70,12 @@ function renderCheckout() {
     const container = document.getElementById('cart-display');
     const totalEl = document.getElementById('cart-total');
     const inputEl = document.getElementById('cart-data-input');
-    
+
     if (!container) return; // Not on checkout page or element missing
-    
+
     if (cart.length === 0) {
         container.innerHTML = '<p>Your cart is empty.</p>';
-        if(totalEl) totalEl.innerText = '0.00';
+        if (totalEl) totalEl.innerText = '0.00';
         return;
     }
 
@@ -75,21 +90,21 @@ function renderCheckout() {
                 <td>${item.name}</td>
                 <td>$${item.price}</td>
                 <td>
-                    <button onclick="updateQuantity(${item.id}, -1)">-</button> 
+                    <button class="btn-qty" onclick="updateQuantity(${item.id}, -1)">-</button> 
                     ${item.quantity} 
-                    <button onclick="updateQuantity(${item.id}, 1)">+</button>
+                    <button class="btn-qty" onclick="updateQuantity(${item.id}, 1)">+</button>
                 </td>
                 <td>$${itemTotal.toFixed(2)}</td>
                 <td><button onclick="removeFromCart(${item.id})" class="btn-danger" style="padding:5px;">X</button></td>
             </tr>
         `;
     });
-    
+
     html += '</tbody></table>';
     container.innerHTML = html;
-    
-    if(totalEl) totalEl.innerText = total.toFixed(2);
-    
+
+    if (totalEl) totalEl.innerText = total.toFixed(2);
+
     // Update hidden input for form submission
-    if(inputEl) inputEl.value = JSON.stringify(cart);
+    if (inputEl) inputEl.value = JSON.stringify(cart);
 }
