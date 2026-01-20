@@ -23,6 +23,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['user_role'] !== 'admin') {
                 <a href="orders.php">Orders</a>
                 <a href="users.php">Users</a>
                 <a href="profile.php">Profile</a>
+                <a href="settings.php">Settings</a>
                 <a href="../logout.php" style="margin-top: 20px; color: #ff6b6b;">Logout</a>
             </nav>
         </div>

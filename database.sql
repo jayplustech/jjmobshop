@@ -32,13 +32,16 @@ CREATE TABLE IF NOT EXISTS `products` (
   FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON DELETE SET NULL
 );
 
--- Orders Table
+-- Orders Table (Updated with payment fields)
 CREATE TABLE IF NOT EXISTS `orders` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `user_id` INT,
+  `order_email` VARCHAR(100) DEFAULT NULL,
   `total_amount` DECIMAL(10, 2) NOT NULL,
-  `status` ENUM('pending', 'processing', 'completed', 'cancelled') DEFAULT 'pending',
+  `status` ENUM('pending', 'processing', 'completed', 'cancelled', 'paid', 'failed') DEFAULT 'pending',
   `address` TEXT NOT NULL,
+  `payment_method` VARCHAR(50) DEFAULT 'cod',
+  `transaction_id` VARCHAR(255) DEFAULT NULL,
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
@@ -61,3 +64,9 @@ CREATE TABLE IF NOT EXISTS `order_items` (
 -- Ideally we insert one admin.
 INSERT INTO `users` (`name`, `email`, `password`, `role`) VALUES
 ('Admin User', 'admin@jjmobishop.com', '$2y$10$e/hS_example_hash_for_admin123', 'admin');
+
+-- Add payment columns if they don't exist (for existing databases)
+ALTER TABLE `orders` 
+ADD COLUMN IF NOT EXISTS `order_email` VARCHAR(100) AFTER `user_id`,
+ADD COLUMN IF NOT EXISTS `payment_method` VARCHAR(50) DEFAULT 'cod',
+ADD COLUMN IF NOT EXISTS `transaction_id` VARCHAR(255) DEFAULT NULL;

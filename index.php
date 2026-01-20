@@ -2,17 +2,26 @@
 require('includes/db.php');
 include('includes/header.php');
 
-// Logic for Category Filter & Sorting
+// Logic for Category Filter, Search & Sorting
 $sort = $_GET['sort'] ?? 'newest';
-$sql = "SELECT * FROM products";
+$search = $_GET['search'] ?? '';
+$cat_id = $_GET['category'] ?? null;
+
+$sql = "SELECT * FROM products WHERE 1=1";
 $params = [];
 
-if (isset($_GET['category'])) {
-    $cat_id = $_GET['category'];
-    $sql .= " WHERE category_id = ?";
+if ($cat_id) {
+    $sql .= " AND category_id = ?";
     $params[] = $cat_id;
 }
 
+if ($search) {
+    $sql .= " AND (name LIKE ? OR description LIKE ?)";
+    $params[] = "%$search%";
+    $params[] = "%$search%";
+}
+
+// Sorting logic
 if ($sort === 'price_asc') $sql .= " ORDER BY price ASC";
 elseif ($sort === 'price_desc') $sql .= " ORDER BY price DESC";
 else $sql .= " ORDER BY created_at DESC";
@@ -20,20 +29,48 @@ else $sql .= " ORDER BY created_at DESC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $products = $stmt->fetchAll();
+// Fetch all settings
+$settings = $pdo->query("SELECT setting_key, setting_value FROM settings")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+// Hero Data
+$hero_title = $settings['hero_title'] ?? 'Find Your Next <br><span>Smartphone</span>';
+$hero_subtitle = $settings['hero_subtitle'] ?? 'Best Deals on Latest Models. Compare prices and get the best value for your money today.';
+$hero_media_type = $settings['hero_media_type'] ?? 'image';
+
+// Hero Media Logic: Prioritize latest product image
+$latestProductStmt = $pdo->query("SELECT image FROM products WHERE image IS NOT NULL AND image != '' ORDER BY id DESC LIMIT 1");
+$latestProductImage = $latestProductStmt->fetchColumn();
+
+if ($latestProductImage) {
+    $hero_media_url = $latestProductImage;
+    $hero_media_type = 'image'; // Force image display for products
+} else {
+    $hero_media_type = $settings['hero_media_type'] ?? 'image';
+    $hero_media_url = $settings['hero_media_url'] ?: 'assets/images/samsung s24 ultra.jpg';
+}
 ?>
 
 <!-- Hero Section (Show only on homepage/no category) -->
 <?php if(!isset($_GET['category'])): ?>
 <section class="hero">
-    <div class="container">
+    <?php if($hero_media_type === 'video'): ?>
+        <video autoplay muted loop playsinline class="hero-video">
+            <source src="<?php echo $hero_media_url; ?>" type="video/mp4">
+        </video>
+    <?php endif; ?>
+
+    <div class="container hero-overlap">
         <div class="hero-content">
-            <h1>Find Your Next <br><span>Smartphone</span></h1>
-            <p>Best Deals on Latest Models. Compare prices and get the best value for your money today.</p>
-            <a href="#shop" class="btn btn-primary">Shop Now</a>
+            <h1><?php echo $hero_title; ?></h1>
+            <p><?php echo htmlspecialchars($hero_subtitle); ?></p>
+            <a href="#shop" class="btn btn-primary"><?php echo $lang == 'sw' ? 'Nunua Sasa' : 'Shop Now'; ?></a>
         </div>
+        
+        <?php if($hero_media_type === 'image'): ?>
         <div class="hero-image">
-            <img src="assets/images/samsung s24 ultra.jpg" alt="Latest Smartphones">
+            <img src="<?php echo $hero_media_url; ?>" alt="Hero Image">
         </div>
+        <?php endif; ?>
     </div>
 </section>
 
@@ -56,18 +93,29 @@ $products = $stmt->fetchAll();
 
 <div class="container" id="shop" style="padding-top: 60px;">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 30px;">
-        <h2 class="section-title">Latest <span>Models</span></h2>
+        <h2 class="section-title">
+            <?php 
+                if ($search) echo lang_replace('search_results', ['query' => htmlspecialchars($search)]);
+                elseif ($cat_id) {
+                    $stmtCat = $pdo->prepare("SELECT name FROM categories WHERE id = ?");
+                    $stmtCat->execute([$cat_id]);
+                    $catName = $stmtCat->fetchColumn();
+                    echo lang_replace('category_label', ['name' => htmlspecialchars($catName)]);
+                }
+                else echo $txt['latest_models']; 
+            ?>
+        </h2>
         
         <!-- Sorting -->
         <form method="GET" style="display:flex; align-items:center; gap:10px;">
-            <?php if(isset($_GET['category'])): ?>
-                <input type="hidden" name="category" value="<?php echo $_GET['category']; ?>">
-            <?php endif; ?>
-            <span style="color:#666;">Sort by:</span>
+            <?php if ($cat_id): ?><input type="hidden" name="category" value="<?php echo $cat_id; ?>"><?php endif; ?>
+            <?php if ($search): ?><input type="hidden" name="search" value="<?php echo htmlspecialchars($search); ?>"><?php endif; ?>
+            
+            <span style="color:#666;"><?php echo $txt['sort_by']; ?></span>
             <select name="sort" onchange="this.form.submit()" style="padding: 8px; border-radius: 20px; border: 1px solid #ddd;">
-                <option value="newest" <?php if($sort=='newest') echo 'selected'; ?>>Newest</option>
-                <option value="price_asc" <?php if($sort=='price_asc') echo 'selected'; ?>>Price: Low to High</option>
-                <option value="price_desc" <?php if($sort=='price_desc') echo 'selected'; ?>>Price: High to Low</option>
+                <option value="newest" <?php if($sort=='newest') echo 'selected'; ?>><?php echo $txt['newest']; ?></option>
+                <option value="price_asc" <?php if($sort=='price_asc') echo 'selected'; ?>><?php echo $txt['price_low_high']; ?></option>
+                <option value="price_desc" <?php if($sort=='price_desc') echo 'selected'; ?>><?php echo $txt['price_high_low']; ?></option>
             </select>
         </form>
     </div>
@@ -81,14 +129,18 @@ $products = $stmt->fetchAll();
                     <img src="<?php echo $product['image']; ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
                 </div>
                 <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
-                <span class="product-price">$<?php echo number_format($product['price'], 2); ?></span>
+                <span class="product-price">TZS <?php echo number_format($product['price'], 2); ?></span>
                 <button class="btn btn-card" onclick="addToCart(<?php echo $product['id']; ?>, '<?php echo htmlspecialchars(addslashes($product['name'])); ?>', <?php echo $product['price']; ?>, '<?php echo $product['image']; ?>')">
-                    Add to Cart
+                    <?php echo $txt['add_to_cart']; ?>
                 </button>
             </div>
             <?php endforeach; ?>
         <?php else: ?>
-            <p style="text-align:center; col-span:full;">No products found in this category.</p>
+            <div style="text-align:center; width:100%; padding: 50px 0;">
+                <i class="fas fa-search" style="font-size: 3rem; color: #ddd; margin-bottom: 20px;"></i>
+                <p style="color: #777;"><?php echo $txt['no_products']; ?></p>
+                <a href="index.php" class="btn btn-secondary" style="margin-top: 10px;"><?php echo $txt['show_all']; ?></a>
+            </div>
         <?php endif; ?>
     </div>
 </div>

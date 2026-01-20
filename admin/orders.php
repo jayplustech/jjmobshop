@@ -9,6 +9,57 @@ if (isset($_POST['update_status'])) {
     $status = $_POST['status'];
     $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
     $stmt->execute([$status, $order_id]);
+
+    // Notify User about status change
+    $stmtUser = $pdo->prepare("
+        SELECT u.email, u.name, o.total_amount 
+        FROM users u 
+        JOIN orders o ON u.id = o.user_id 
+        WHERE o.id = ?
+    ");
+    $stmtUser->execute([$order_id]);
+    $user = $stmtUser->fetch();
+
+    if ($user) {
+        $subject = "Mabadiliko ya Oda #$order_id - JJ MOBISHOP";
+        $status_label = strtoupper($status);
+        $status_color = ($status == 'completed') ? '#00d084' : (($status == 'cancelled') ? '#ff4d4d' : '#007bff');
+        
+        $email_body = "
+        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;'>
+            <div style='background: #0A1A2F; padding: 30px; text-align: center; color: #ffffff;'>
+                <h1 style='margin: 0; font-size: 24px; letter-spacing: 2px;'>JJ MOBISHOP</h1>
+                <p style='margin: 5px 0 0; opacity: 0.8;'>Taarifa ya Oda</p>
+            </div>
+            <div style='padding: 30px; background: #ffffff;'>
+                <h2 style='color: #333;'>Habari " . $user['name'] . ",</h2>
+                <p style='color: #555; line-height: 1.6;'>
+                    Oda yako <strong>#$order_id</strong> imefanyiwa mabadiliko ya hali ya maendeleo yake.
+                </p>
+                <div style='background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid $status_color;'>
+                    <p style='margin: 0; font-weight: bold; color: #333;'>Hali Mpya:</p>
+                    <p style='margin: 10px 0; font-size: 18px; color: $status_color; font-weight: bold;'>$status_label</p>
+                </div>
+                <p style='color: #555; line-height: 1.6;'>
+                    Tafadhali ingia kwenye akaunti yako kuona maelezo zaidi kuhusu oda hii.
+                </p>
+                <a href='http://localhost/JJMOBISHOP/my_orders.php' style='display: inline-block; background: #0A1A2F; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; margin-top: 20px;'>Fungua My Orders</a>
+            </div>
+            <div style='background: #f4f4f4; padding: 20px; text-align: center; color: #888; font-size: 12px;'>
+                <p>&copy; " . date('Y') . " JJ MOBISHOP. Haki zote zimehifadhiwa.</p>
+            </div>
+        </div>
+        ";
+        
+        // Log notification
+        $logFile = '../logs/api.log';
+        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] [ADMIN NOTIFY] User: " . $user['name'] . " - Status: $status" . PHP_EOL, FILE_APPEND);
+        
+        // Email
+        $headers = "MIME-Version: 1.0" . "\r\n" . "Content-type:text/html;charset=UTF-8" . "\r\n" . "From: JJ MOBISHOP <noreply@jjmobishop.com>" . "\r\n";
+        @mail($user['email'], $subject, $email_body, $headers);
+    }
+
     header("Location: orders.php");
     exit();
 }
@@ -52,6 +103,7 @@ if (isset($_GET['view'])) {
                 <th>Customer</th>
                 <th>Address</th>
                 <th>Total</th>
+                <th>Payment</th>
                 <th>Status</th>
                 <th>Action</th>
             </tr>
@@ -63,7 +115,13 @@ if (isset($_GET['view'])) {
                 <td><?php echo htmlspecialchars($order['user_name']); ?></td>
                 <!-- Truncate address to avoid breaking layout -->
                 <td style="max-width:200px;"><?php echo htmlspecialchars($order['address']); ?></td>
-                <td><strong>$<?php echo number_format($order['total_amount'], 2); ?></strong></td>
+                <td><strong>TZS <?php echo number_format($order['total_amount'], 2); ?></strong></td>
+                <td>
+                    <small style="display:block;"><?php echo strtoupper($order['payment_method'] ?? 'COD'); ?></small>
+                    <?php if(!empty($order['transaction_id'])): ?>
+                        <small style="color:#666; font-size:0.75rem;">TX: <?php echo substr($order['transaction_id'], 0, 15); ?>...</small>
+                    <?php endif; ?>
+                </td>
                 <td>
                     <form method="POST" action="" style="display:inline;">
                         <input type="hidden" name="order_id" value="<?php echo $order['id']; ?>">
@@ -97,6 +155,11 @@ if (isset($_GET['view'])) {
         <p><strong>Customer:</strong> <?php echo htmlspecialchars($view_order['user_name']); ?> (<?php echo htmlspecialchars($view_order['email']); ?>)</p>
         <p><strong>Date:</strong> <?php echo $view_order['created_at']; ?></p>
         <p><strong>Status:</strong> <?php echo ucfirst($view_order['status']); ?></p>
+        <p><strong>Payment Method:</strong> <?php echo strtoupper($view_order['payment_method'] ?? 'COD'); ?></p>
+        <?php if(!empty($view_order['transaction_id'])): ?>
+            <p><strong>Transaction ID:</strong> <code style="background:#f4f4f4; padding:2px 6px; border-radius:3px;"><?php echo htmlspecialchars($view_order['transaction_id']); ?></code></p>
+        <?php endif; ?>
+        <p><strong>Delivery Address:</strong><br><?php echo nl2br(htmlspecialchars($view_order['address'])); ?></p>
 
         <h4 style="margin-top:20px;">Items</h4>
         <table style="width:100%; border-collapse: collapse; margin-top:10px;">
@@ -112,12 +175,12 @@ if (isset($_GET['view'])) {
                     <?php echo htmlspecialchars($item['name']); ?>
                 </td>
                 <td style="padding:8px;">x<?php echo $item['quantity']; ?></td>
-                <td style="padding:8px;">$<?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
+                <td style="padding:8px;">TZS <?php echo number_format($item['price'] * $item['quantity'], 2); ?></td>
             </tr>
             <?php endforeach; ?>
         </table>
         
-        <h3 style="text-align:right; margin-top:20px;">Total: $<?php echo number_format($view_order['total_amount'], 2); ?></h3>
+        <h3 style="text-align:right; margin-top:20px;">Total: TZS <?php echo number_format($view_order['total_amount'], 2); ?></h3>
     </div>
 </div>
 <?php endif; ?>

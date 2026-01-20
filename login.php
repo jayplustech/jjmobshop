@@ -2,6 +2,16 @@
 require('includes/db.php');
 session_start();
 
+// Auto redirect if already logged in
+if (isset($_SESSION['user_id'])) {
+    if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin') {
+        header("Location: admin/dashboard.php");
+    } else {
+        header("Location: index.php");
+    }
+    exit();
+}
+
 if (isset($_POST['login'])) {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
@@ -14,8 +24,12 @@ if (isset($_POST['login'])) {
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password'])) {
+            // Secure Session: Prevent Session Fixation
+            session_regenerate_id(true);
+
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['name'];
+            $_SESSION['user_email'] = $user['email'];
             $_SESSION['user_role'] = $user['role'];
 
             if ($user['role'] === 'admin') {
@@ -35,8 +49,8 @@ if (isset($_POST['login'])) {
 <div class="auth-wrapper">
     <div class="auth-container">
         <div class="auth-tabs">
-            <a href="login.php" class="auth-tab active">Login</a>
-            <a href="register.php" class="auth-tab">Register</a>
+            <a href="login.php" class="auth-tab active"><?php echo $txt['login']; ?></a>
+            <a href="register.php" class="auth-tab"><?php echo $txt['register']; ?></a>
         </div>
         
         <?php if(isset($_SESSION['success'])): ?>
@@ -51,19 +65,19 @@ if (isset($_POST['login'])) {
             <?php endif; ?>
 
             <div class="form-group">
-                <label>Email Address</label>
+                <label><?php echo $txt['email_label']; ?></label>
                 <input type="email" name="email" placeholder="example@gmail.com" required>
             </div>
             <div class="form-group">
-                <label>Password</label>
+                <label><?php echo $txt['password_label']; ?></label>
                 <input type="password" name="password" placeholder="••••••••" required>
             </div>
             
-            <button type="submit" name="login" class="btn btn-auth">Login to Account</button>
+            <button type="submit" name="login" class="btn btn-auth"><?php echo $txt['login_title']; ?></button>
         </form>
         
         <div class="auth-footer">
-            <p>Forgot password? <a href="#">Reset here</a></p>
+            <p><?php echo $txt['forgot_password']; ?> <a href="#">Reset here</a></p>
         </div>
     </div>
 </div>

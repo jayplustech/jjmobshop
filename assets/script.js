@@ -8,6 +8,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.location.pathname.includes('checkout.php')) {
         renderCheckout();
     }
+
+    // Sidebar Toggle Logic
+    const menuBtn = document.getElementById('menu-toggle');
+    const closeBtn = document.getElementById('menu-close');
+    const sidebar = document.getElementById('sidebar-nav');
+    const overlay = document.getElementById('sidebar-overlay');
+
+    function openSidebar() {
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+    }
+
+    if (menuBtn) menuBtn.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
 });
 
 function addToCart(id, name, price, image) {
@@ -18,7 +38,37 @@ function addToCart(id, name, price, image) {
         cart.push({ id, name, price, image, quantity: 1 });
     }
     saveCart();
-    alert(name + ' added to cart!');
+    showToast('Success', name + ' added to cart!');
+}
+
+function showToast(title, message) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+        <i class="fas fa-check-circle"></i>
+        <div class="toast-content">
+            <div class="toast-title">${title}</div>
+            <div class="toast-msg">${message}</div>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Trigger animation
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 10);
+
+    // Remove after 3 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }, 3000);
 }
 
 function saveCart() {
@@ -27,24 +77,16 @@ function saveCart() {
 }
 
 function updateCartCount() {
-    const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+    // Read local storage cart
+    let currentCart = JSON.parse(localStorage.getItem('jj_cart')) || [];
+    let localCount = currentCart.reduce((sum, item) => sum + item.quantity, 0);
+
     const countEl = document.getElementById('cart-count');
+    if (!countEl) return;
 
-    if (countEl) {
-        countEl.innerText = count;
-
-        // Trigger Animation
-        countEl.classList.remove('bump');
-        void countEl.offsetWidth; // Trigger reflow
-        countEl.classList.add('bump');
-
-        // Optional: Hide if 0
-        if (count === 0) {
-            countEl.style.display = 'none';
-        } else {
-            countEl.style.display = 'inline-block';
-        }
-    }
+    // Set display based on local cart
+    countEl.innerText = localCount;
+    countEl.style.display = (localCount > 0) ? 'inline-block' : 'none';
 }
 
 function removeFromCart(id) {
@@ -88,13 +130,13 @@ function renderCheckout() {
         html += `
             <tr>
                 <td>${item.name}</td>
-                <td>$${item.price}</td>
+                <td>TZS ${item.price}</td>
                 <td>
                     <button class="btn-qty" onclick="updateQuantity(${item.id}, -1)">-</button> 
                     ${item.quantity} 
                     <button class="btn-qty" onclick="updateQuantity(${item.id}, 1)">+</button>
                 </td>
-                <td>$${itemTotal.toFixed(2)}</td>
+                <td>TZS ${itemTotal.toFixed(2)}</td>
                 <td><button onclick="removeFromCart(${item.id})" class="btn-danger" style="padding:5px;">X</button></td>
             </tr>
         `;

@@ -122,7 +122,7 @@ if ($action === 'add' || $action === 'edit') {
                 <td><?php if($p['image']) echo "<img src='../{$p['image']}' width='50'>"; ?></td>
                 <td><?php echo htmlspecialchars($p['name']); ?></td>
                 <td><?php echo htmlspecialchars($p['category_name']); ?></td>
-                <td>$<?php echo $p['price']; ?></td>
+                <td>TZS <?php echo $p['price']; ?></td>
                 <td>
                     <a href="products.php?action=edit&id=<?php echo $p['id']; ?>" class="btn">Edit</a>
                     <a href="products.php?delete=<?php echo $p['id']; ?>" class="btn btn-danger" onclick="return confirm('Delete?')">Delete</a>

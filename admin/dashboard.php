@@ -42,7 +42,7 @@ $recentOrders = $pdo->query("SELECT * FROM orders ORDER BY created_at DESC LIMIT
         <?php foreach ($recentOrders as $order): ?>
         <tr>
             <td>#<?php echo $order['id']; ?></td>
-            <td>$<?php echo number_format($order['total_amount'], 2); ?></td>
+            <td>TZS <?php echo number_format($order['total_amount'], 2); ?></td>
             <td><?php echo ucfirst($order['status']); ?></td>
             <td><?php echo $order['created_at']; ?></td>
         </tr>
